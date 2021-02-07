@@ -1,6 +1,4 @@
 {
-    "name": "Hue",
-    "color": "#0074D9",
     "skillMetadata": {
         "sections": [
             {
@@ -10,7 +8,7 @@
                         "name": "verbose",
                         "type": "checkbox",
                         "label": "Verbose",
-                        "value": false
+                        "value": "false"
 		    },
 		    {
 			"type": "label",

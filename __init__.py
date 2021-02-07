@@ -18,8 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from adapt.intent import IntentBuilder
+from collections import defaultdict
 from mycroft.skills.core import MycroftSkill
 from mycroft.util.log import getLogger
+from mycroft.messagebus.message import Message
 from os.path import dirname
 from phue import Bridge
 from phue import Group
@@ -67,8 +69,8 @@ def intent_handler(handler_function):
     callable
 
     """
-    def handler(self, message):
-        if message.type == 'ConnectLightsIntent' \
+    def handler(self, message: Message):
+        if message.msg_type == 'ConnectLightsIntent' \
                 or self.connected or self._connect_to_bridge():
             group = self.default_group
             if "Group" in message.data:
@@ -117,7 +119,7 @@ class PhillipsHueSkill(MycroftSkill):
         self.bridge = None
         self.default_group = None
         self.groups_to_ids_map = dict()
-        self.scenes_to_ids_map = dict()
+        self.scenes_to_ids_map = defaultdict(dict)
         self.colors_to_cie_color_map = self._map_colors_to_cie_colors(os.path.join(os.path.dirname(os.path.realpath(__file__)), "colors"))
 
     @property
@@ -289,7 +291,9 @@ class PhillipsHueSkill(MycroftSkill):
         scenes = self.bridge.get_scene()
         for id, scene in scenes.items():
             name = scene['name'].lower()
-            self.scenes_to_ids_map[name] = id
+            group_id = scene.get('group')
+            group_id = int(group_id) if group_id else None
+            self.scenes_to_ids_map[group_id][name] = id
             self.register_vocabulary(name, "Scene")
 
     def initialize(self):
@@ -383,7 +387,9 @@ class PhillipsHueSkill(MycroftSkill):
     @intent_handler
     def handle_activate_scene_intent(self, message, group):
         scene_name = message.data['Scene'].lower()
-        scene_id = self.scenes_to_ids_map[scene_name]
+        scene_id = self.scenes_to_ids_map[group.group_id].get(scene_name)
+        if not scene_id:
+            scene_id = self.scenes_to_ids_map[None].get(scene_name)
         if scene_id:
             if self.verbose:
                 self.speak_dialog('activate.scene',
