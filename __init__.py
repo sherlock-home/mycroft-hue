@@ -366,7 +366,6 @@ class PhillipsHueSkill(MycroftSkill):
 
         change_color_intent = \
             IntentBuilder("ChangeLightColorIntent") \
-            .require("ColorKeyword") \
             .require("Color") \
             .one_of("Group", "LightsKeyword") \
             .build()
